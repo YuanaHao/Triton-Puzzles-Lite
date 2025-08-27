@@ -60,9 +60,9 @@ tl.load use mask: [0 1 2 3 4 5 6 7] < 5 = [1 1 1 1 1 0 0 0]
 def demo1(x_ptr):
     range = tl.arange(0, 8)
     # print works in the interpreter
-    print(range)
+    print("range: ", range)
     x = tl.load(x_ptr + range, range < 5, 0)
-    print(x)
+    print("x: ", x)
 
 
 def run_demo1():
@@ -107,9 +107,9 @@ def demo2(x_ptr):
     j_range = tl.arange(0, 4)[None, :]
     range = i_range * 4 + j_range
     # print works in the interpreter
-    print(range)
+    print("range: ", range)
     x = tl.load(x_ptr + range, (i_range < 4) & (j_range < 3), 0)
-    print(x)
+    print("x: ", x)
 
 
 def run_demo2():
@@ -152,7 +152,7 @@ def run_demo3():
     print("Demo3 Output: ")
     z = torch.ones(4, 3)
     demo3[(1, 1, 1)](z)
-    print(z)
+    print("z: ", z)
     print_end_line()
 
 
@@ -212,12 +212,18 @@ def add_spec(x: Float32[32,]) -> Float32[32,]:
 
 @triton.jit
 def add_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
-    # We name the offsets of the pointers as "off_"
-    off_x = tl.arange(0, B0)
-    x = tl.load(x_ptr + off_x)
-    # Finish me!
-    return
+    # 获取当前程序实例的ID
+    pid = tl.program_id(axis=0)
 
+    # 基于ID计算这一块数据的起始偏移量
+    block_start = pid * B0
+    offsets = block_start + tl.arange(0, B0)
+    
+    x = tl.load(x_ptr + offsets)
+    z = x + 10.0
+    tl.store(z_ptr + offsets, z)
+    
+    return
 
 r"""
 ## Puzzle 2: Constant Add Block
