@@ -212,17 +212,11 @@ def add_spec(x: Float32[32,]) -> Float32[32,]:
 
 @triton.jit
 def add_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
-    # 获取当前程序实例的ID
-    pid = tl.program_id(axis=0)
-
-    # 基于ID计算这一块数据的起始偏移量
-    block_start = pid * B0
-    offsets = block_start + tl.arange(0, B0)
-    
-    x = tl.load(x_ptr + offsets)
-    z = x + 10.0
-    tl.store(z_ptr + offsets, z)
-    
+    # We name the offsets of the pointers as "off_"
+    off_x = tl.arange(0, B0)
+    x = tl.load(x_ptr + off_x)
+    z = add_spec(x)
+    tl.store(z_ptr + off_x, z)
     return
 
 r"""
